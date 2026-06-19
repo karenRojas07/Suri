@@ -1,0 +1,32 @@
+[
+  {
+    "url": "./assets/avatar/SURI_Animations_2.glb",
+    "label": "Suri Animations 2",
+    "short": "S2",
+    "defaultAnimation": "idle"
+  },
+  {
+    "url": "./assets/avatar/Suri_Animations.glb",
+    "label": "Suri Animations",
+    "short": "SA",
+    "defaultAnimation": "idle"
+  },
+  {
+    "url": "./assets/avatar/suri_avatar.glb",
+    "label": "Suri base",
+    "short": "S",
+    "defaultAnimation": "idle"
+  },
+  {
+    "url": "./assets/avatar/Meshy_AI_Tech_Savvy_Meerkat_0610041201_generate.glb",
+    "label": "Meshy tech",
+    "short": "T",
+    "defaultAnimation": "idle"
+  },
+  {
+    "url": "./assets/avatar/Meshy_AI_Meshy_Merged_Animations.glb",
+    "label": "Meshy merged",
+    "short": "M",
+    "defaultAnimation": "idle"
+  }
+]

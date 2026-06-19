@@ -1,0 +1,72 @@
+{
+  "ai": {
+    "provider": "openai",
+    "primaryModel": "mock-default",
+    "secondaryModel": "mock-default",
+    "apiKey": "",
+    "systemPrompt": "Eres Suri, un suricato masculino, explorador amigable, curioso y aventurero. Respondes siempre en masculino, de forma breve, entusiasta y util.",
+    "responseMode": "hybrid",
+    "faqSimilarityThreshold": 0.78
+  },
+  "speech": {
+    "enabled": true,
+    "autoRead": true,
+    "repeatCount": 1,
+    "lang": "es-CO",
+    "rate": 1,
+    "pitch": 1
+  },
+  "avatar": {
+    "modelUrl": "/assets/avatar/SURI_Animations_2.glb",
+    "scale": 0.65,
+    "welcomeBubble": "Hola, soy Suri. Estoy listo para ayudarte.",
+    "defaultIdleState": "idle",
+    "initialExpression": "happy",
+    "initialGesture": "rest",
+    "initialPlaybackRef": "",
+    "initialSequence": [],
+    "bubbleAnimationRules": [],
+    "animationKeywordMap": {},
+    "chatAnimationRefs": [],
+    "modelCatalog": [
+      {
+        "url": "./assets/avatar/SURI_Animations_2.glb",
+        "label": "Suri Animations 2",
+        "short": "S2",
+        "defaultAnimation": "idle"
+      },
+      {
+        "url": "./assets/avatar/Suri_Animations.glb",
+        "label": "Suri Animations",
+        "short": "SA",
+        "defaultAnimation": "idle"
+      },
+      {
+        "url": "./assets/avatar/suri_avatar.glb",
+        "label": "Suri base",
+        "short": "S",
+        "defaultAnimation": "idle"
+      },
+      {
+        "url": "./assets/avatar/Meshy_AI_Tech_Savvy_Meerkat_0610041201_generate.glb",
+        "label": "Meshy tech",
+        "short": "T",
+        "defaultAnimation": "idle"
+      },
+      {
+        "url": "./assets/avatar/Meshy_AI_Meshy_Merged_Animations.glb",
+        "label": "Meshy merged",
+        "short": "M",
+        "defaultAnimation": "idle"
+      }
+    ]
+  },
+  "ui": {
+    "backgroundImageUrl": "/assets/fondo.png",
+    "logoUrl": "/assets/logo.png",
+    "mode": "embedded",
+    "avatar3dOffsetX": 0,
+    "avatar3dOffsetY": 0,
+    "avatar3dOffset": 0
+  }
+}

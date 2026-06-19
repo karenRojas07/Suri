@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test TTS SURI</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #1c2430;
+      --muted: #6f7a88;
+      --accent: #0f5fa8;
+      --accent-2: #0d8f7f;
+      --border: #d8e1ea;
+      --danger: #b42318;
+      --ok: #117a65;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 0% 0%, #ffffff 0%, transparent 42%),
+        radial-gradient(circle at 100% 100%, #e9f2fb 0%, transparent 45%),
+        var(--bg);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: min(860px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(15, 32, 53, 0.08);
+      padding: 20px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.2rem, 2.4vw, 1.7rem);
+    }
+
+    .subtitle {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: #3a4553;
+      font-weight: 600;
+    }
+
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    textarea {
+      min-height: 130px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #playBtn {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    #stopBtn {
+      background: #e9eef5;
+      color: #243447;
+    }
+
+    #warmBtn {
+      background: var(--accent-2);
+      color: #fff;
+    }
+
+    #clearLogsBtn {
+      background: #2f3f53;
+      color: #fff;
+    }
+
+    .status {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+      color: #334155;
+    }
+
+    .status.ok {
+      border-color: #b7e0d4;
+      color: var(--ok);
+      background: #effbf7;
+    }
+
+    .status.error {
+      border-color: #f2c3bf;
+      color: var(--danger);
+      background: #fff4f3;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .mod-panel {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: #f9fbff;
+      display: grid;
+      gap: 10px;
+    }
+
+    .mod-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .mod-section {
+      border: 1px dashed #c8d5e6;
+      border-radius: 10px;
+      padding: 10px;
+      background: #ffffff;
+      display: grid;
+      gap: 8px;
+    }
+
+    .mod-section[hidden] {
+      display: none;
+    }
+
+    .mod-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4f6277;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .inline-actions button {
+      background: #e8eef8;
+      color: #22344a;
+      border: 1px solid #ccdae9;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .mod-apply {
+      background: #2563eb;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-weight: 700;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+    }
+
+    @media (max-width: 760px) {
+      .mod-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    #errorLogs {
+      min-height: 180px;
+      background: #0f1722;
+      color: #d9e7fb;
+      border: 1px solid #334155;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.83rem;
+      line-height: 1.35;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Prueba de Reproduccion TTS</h1>
+    <p class="subtitle">Selecciona motor, escribe texto y presiona Play.</p>
+
+    <div class="grid">
+      <div>
+        <label for="engineSelect">Modelo / Motor</label>
+        <select id="engineSelect">
+          <option value="browser">Navegador (Web Speech)</option>
+          <option value="mespeak-js">meSpeak.js (ES-LA)</option>
+          <option value="kokoro">Kokoro (WASM)</option>
+          <option value="espeak-wasm">eSpeak perfil (Web Speech)</option>
+        </select>
+        <div class="hint" id="engineHint"></div>
+      </div>
+
+      <div>
+        <label for="textInput">Texto</label>
+        <textarea id="textInput">Hola, esta es una prueba de voz para validar la reproduccion del sistema.</textarea>
+      </div>
+
+      <div class="mod-panel" id="voiceModPanel">
+        <div class="mod-title">Modulación de voz y capacidades</div>
+
+        <div class="mod-grid">
+          <div>
+            <label for="modSpeed">Velocidad global (0.7 - 1.6)</label>
+            <input id="modSpeed" type="number" min="0.7" max="1.6" step="0.05" value="1.1">
+          </div>
+          <div>
+            <label for="modBrowserLang">Idioma navegador (Web Speech)</label>
+            <select id="modBrowserLang">
+              <option value="es-ES">es-ES</option>
+              <option value="es-MX">es-MX</option>
+              <option value="es-AR">es-AR</option>
+              <option value="es-CO">es-CO</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mod-section" id="modSectionBrowser" data-engine="browser">
+          <div class="mod-title">Navegador</div>
+          <div>
+            <label for="modBrowserPitch">Tono navegador (0.5 - 2.0)</label>
+            <input id="modBrowserPitch" type="number" min="0.5" max="2" step="0.05" value="1.2">
+          </div>
+        </div>
+
+        <div class="mod-section" id="modSectionKokoro" data-engine="kokoro" hidden>
+          <div class="mod-title">Kokoro</div>
+          <div>
+            <label for="modKokoroVoice">Tipo de voz Kokoro</label>
+            <select id="modKokoroVoice">
+              <option value="">(cargando voces...)</option>
+            </select>
+          </div>
+          <div class="inline-actions">
+            <button id="btnReloadKokoroVoices" type="button">Recargar voces Kokoro</button>
+          </div>
+        </div>
+
+        <div class="mod-section" id="modSectionEspeak" data-engine="espeak-wasm" hidden>
+          <div class="mod-title">Perfil eSpeak (Web Speech)</div>
+          <div class="mod-grid">
+            <div>
+              <label for="modEspeakVoice">Idioma / voz (perfil eSpeak)</label>
+              <input id="modEspeakVoice" type="text" value="es" placeholder="es, es-la, en...">
+            </div>
+            <div>
+              <label for="modEspeakRate">Velocidad base eSpeak (90 - 320)</label>
+              <input id="modEspeakRate" type="number" min="90" max="320" step="1" value="170">
+            </div>
+          </div>
+        </div>
+
+        <div class="mod-section" id="modSectionMespeak" data-engine="mespeak-js" hidden>
+          <div class="mod-title">meSpeak.js</div>
+          <div class="mod-grid">
+            <div>
+              <label for="modMeSpeakVoice">Tipo de voz meSpeak</label>
+              <select id="modMeSpeakVoice">
+                <option value="es-la">es-la (LatAm)</option>
+                <option value="es">es (ES)</option>
+              </select>
+            </div>
+            <div>
+              <label for="modMeSpeakRate">Velocidad meSpeak (90 - 320)</label>
+              <input id="modMeSpeakRate" type="number" min="90" max="320" step="1" value="170">
+            </div>
+          </div>
+          <div class="mod-grid">
+            <div>
+              <label for="modMeSpeakPitch">Tono meSpeak (0 - 99)</label>
+              <input id="modMeSpeakPitch" type="number" min="0" max="99" step="1" value="50">
+            </div>
+            <div>
+              <label for="modMeSpeakAmplitude">Amplitud meSpeak (0 - 200)</label>
+              <input id="modMeSpeakAmplitude" type="number" min="0" max="200" step="1" value="100">
+            </div>
+          </div>
+        </div>
+
+        <div class="inline-actions">
+          <button id="btnApplyModulation" class="mod-apply" type="button">Aplicar modulación</button>
+        </div>
+        <div class="hint">Los valores se guardan en suriAvatarConfig y se aplican al motor seleccionado.</div>
+      </div>
+
+      <div class="actions">
+        <button id="playBtn" type="button">Play</button>
+        <button id="stopBtn" type="button">Stop</button>
+        <button id="warmBtn" type="button">Precargar motor</button>
+        <button id="clearLogsBtn" type="button">Limpiar logs</button>
+      </div>
+
+      <div id="status" class="status">Listo para probar.</div>
+
+      <div>
+        <label for="errorLogs">Log de errores por modelo</label>
+        <textarea id="errorLogs" readonly></textarea>
+        <div class="hint">Registra errores y eventos relevantes por motor seleccionado.</div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getKokoroTtsService } from "./src/services/kokoroTtsService.js";
+
+    const CONFIG_KEY = "suriAvatarConfig";
+    const statusEl = document.getElementById("status");
+    const textInput = document.getElementById("textInput");
+    const engineSelect = document.getElementById("engineSelect");
+    const engineHint = document.getElementById("engineHint");
+    const playBtn = document.getElementById("playBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const warmBtn = document.getElementById("warmBtn");
+    const clearLogsBtn = document.getElementById("clearLogsBtn");
+    const errorLogs = document.getElementById("errorLogs");
+    const modSpeed = document.getElementById("modSpeed");
+    const modBrowserLang = document.getElementById("modBrowserLang");
+    const modBrowserPitch = document.getElementById("modBrowserPitch");
+    const modKokoroVoice = document.getElementById("modKokoroVoice");
+    const btnReloadKokoroVoices = document.getElementById("btnReloadKokoroVoices");
+    const modEspeakVoice = document.getElementById("modEspeakVoice");
+    const modEspeakRate = document.getElementById("modEspeakRate");
+    const modMeSpeakVoice = document.getElementById("modMeSpeakVoice");
+    const modMeSpeakRate = document.getElementById("modMeSpeakRate");
+    const modMeSpeakPitch = document.getElementById("modMeSpeakPitch");
+    const modMeSpeakAmplitude = document.getElementById("modMeSpeakAmplitude");
+    const btnApplyModulation = document.getElementById("btnApplyModulation");
+    const modSectionBrowser = document.getElementById("modSectionBrowser");
+    const modSectionKokoro = document.getElementById("modSectionKokoro");
+    const modSectionEspeak = document.getElementById("modSectionEspeak");
+    const modSectionMespeak = document.getElementById("modSectionMespeak");
+
+    const tts = getKokoroTtsService();
+
+    function setStatus(text, kind = "") {
+      statusEl.textContent = text;
+      statusEl.classList.remove("ok", "error");
+      if (kind) statusEl.classList.add(kind);
+    }
+
+    function nowStamp() {
+      return new Date().toISOString();
+    }
+
+    function normalizeError(error) {
+      if (!error) return "desconocido";
+      if (typeof error === "string") return error;
+      return error.message || String(error);
+    }
+
+    function appendLog(message, level = "INFO", model = "-") {
+      const line = `[${nowStamp()}] [${level}] [${model}] ${message}`;
+      const previous = String(errorLogs.value || "").trimEnd();
+      const next = previous ? `${previous}\n${line}` : line;
+      const maxChars = 12000;
+      errorLogs.value = next.slice(-maxChars);
+      errorLogs.scrollTop = errorLogs.scrollHeight;
+    }
+
+    function clampNumber(value, min, max, fallback) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function updateModulationVisibility(engine) {
+      modSectionBrowser.hidden = engine !== "browser";
+      modSectionKokoro.hidden = engine !== "kokoro";
+      modSectionEspeak.hidden = engine !== "espeak-wasm";
+      modSectionMespeak.hidden = engine !== "mespeak-js";
+    }
+
+    function normalizeSelectValue(selectEl, fallback) {
+      const value = String(selectEl?.value || "").trim();
+      return value || fallback;
+    }
+
+    async function loadKokoroVoiceOptions() {
+      const previous = String(modKokoroVoice.value || "").trim();
+      modKokoroVoice.innerHTML = "";
+
+      let list = [];
+      try {
+        await tts.requestVoices();
+        list = tts.getVoiceCatalog();
+      } catch {
+        list = [];
+      }
+
+      if (!Array.isArray(list) || !list.length) {
+        const fallback = document.createElement("option");
+        fallback.value = "";
+        fallback.textContent = "(sin voces detectadas)";
+        modKokoroVoice.appendChild(fallback);
+        return;
+      }
+
+      for (const voice of list) {
+        const option = document.createElement("option");
+        option.value = String(voice.id || "").trim();
+        const lang = String(voice.language || voice.lang || "").trim();
+        option.textContent = lang ? `${voice.id} (${lang})` : String(voice.id || "");
+        modKokoroVoice.appendChild(option);
+      }
+
+      const prefVoice = String(tts.getPreferences()?.voice || "").trim();
+      const nextValue = [previous, prefVoice].find((value) => value && list.some((voice) => String(voice.id) === value));
+      modKokoroVoice.value = nextValue || String(list[0].id || "");
+    }
+
+    function fillControlsFromState() {
+      const config = readConfig();
+      const prefs = tts.getPreferences();
+      const ttsCfg = config?.voice?.tts || {};
+
+      modSpeed.value = String(clampNumber(prefs?.speed ?? 1.1, 0.7, 1.6, 1.1));
+      modBrowserLang.value = String(prefs?.fallbackLang || "es-ES");
+      modBrowserPitch.value = String(clampNumber(prefs?.fallbackPitch ?? 1.2, 0.5, 2, 1.2));
+
+      modEspeakVoice.value = String(ttsCfg?.espeakVoice || tts.ttsOptions?.espeakVoice || "es");
+      modEspeakRate.value = String(clampNumber(ttsCfg?.espeakRateWpm ?? tts.ttsOptions?.espeakRateWpm ?? 170, 90, 320, 170));
+
+      modMeSpeakVoice.value = String(ttsCfg?.meSpeakVoice || tts.ttsOptions?.meSpeakVoice || "es-la");
+      modMeSpeakRate.value = String(clampNumber(ttsCfg?.meSpeakRateWpm ?? tts.ttsOptions?.meSpeakRateWpm ?? 170, 90, 320, 170));
+      modMeSpeakPitch.value = String(clampNumber(ttsCfg?.meSpeakPitch ?? tts.ttsOptions?.meSpeakPitch ?? 50, 0, 99, 50));
+      modMeSpeakAmplitude.value = String(clampNumber(ttsCfg?.meSpeakAmplitude ?? tts.ttsOptions?.meSpeakAmplitude ?? 100, 0, 200, 100));
+    }
+
+    function applyModulation() {
+      const config = readConfig();
+      config.voice = config.voice || {};
+      config.voice.tts = config.voice.tts || {};
+
+      const safeSpeed = clampNumber(modSpeed.value, 0.7, 1.6, 1.1);
+      const safeBrowserPitch = clampNumber(modBrowserPitch.value, 0.5, 2, 1.2);
+      const safeBrowserLang = normalizeSelectValue(modBrowserLang, "es-ES");
+
+      const safeEspeakVoice = String(modEspeakVoice.value || "es").trim().toLowerCase() || "es";
+      const safeEspeakRate = Math.round(clampNumber(modEspeakRate.value, 90, 320, 170));
+
+      const safeMeSpeakVoice = normalizeSelectValue(modMeSpeakVoice, "es-la");
+      const safeMeSpeakRate = Math.round(clampNumber(modMeSpeakRate.value, 90, 320, 170));
+      const safeMeSpeakPitch = Math.round(clampNumber(modMeSpeakPitch.value, 0, 99, 50));
+      const safeMeSpeakAmplitude = Math.round(clampNumber(modMeSpeakAmplitude.value, 0, 200, 100));
+
+      const selectedKokoroVoice = String(modKokoroVoice.value || "").trim();
+      if (selectedKokoroVoice) {
+        tts.setVoice(selectedKokoroVoice);
+      }
+
+      tts.setSpeed(safeSpeed);
+      tts.setFallbackLang(safeBrowserLang);
+      tts.setFallbackPitch(safeBrowserPitch);
+
+      config.voice.tts.espeakVoice = safeEspeakVoice;
+      config.voice.tts.espeakRateWpm = safeEspeakRate;
+      config.voice.tts.meSpeakVoice = safeMeSpeakVoice;
+      config.voice.tts.meSpeakRateWpm = safeMeSpeakRate;
+      config.voice.tts.meSpeakPitch = safeMeSpeakPitch;
+      config.voice.tts.meSpeakAmplitude = safeMeSpeakAmplitude;
+
+      writeConfig(config);
+
+      tts.ttsOptions = {
+        ...(tts.ttsOptions || {}),
+        espeakVoice: safeEspeakVoice,
+        espeakRateWpm: safeEspeakRate,
+        meSpeakVoice: safeMeSpeakVoice,
+        meSpeakRateWpm: safeMeSpeakRate,
+        meSpeakPitch: safeMeSpeakPitch,
+        meSpeakAmplitude: safeMeSpeakAmplitude,
+        kokoroVoice: selectedKokoroVoice || tts.ttsOptions?.kokoroVoice
+      };
+
+      appendLog(
+        `Modulacion aplicada | speed=${safeSpeed} | lang=${safeBrowserLang} | pitch=${safeBrowserPitch} | kokoroVoice=${selectedKokoroVoice || "-"} | espeak=${safeEspeakVoice}@${safeEspeakRate} | mespeak=${safeMeSpeakVoice}@${safeMeSpeakRate}/p${safeMeSpeakPitch}/a${safeMeSpeakAmplitude}`,
+        "INFO",
+        getSelectedEngine()
+      );
+      setStatus("Modulacion aplicada.", "ok");
+    }
+
+    function readConfig() {
+      try {
+        const raw = localStorage.getItem(CONFIG_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function writeConfig(config) {
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    }
+
+    function getSelectedEngine() {
+      return String(engineSelect.value || "browser").trim().toLowerCase();
+    }
+
+    function getActiveModelTag() {
+      const selected = getSelectedEngine();
+      const current = String(tts.currentEngine || "").trim().toLowerCase();
+      return current || selected || "-";
+    }
+
+    function applyEngineToConfig(engine) {
+      const config = readConfig();
+      config.voice = config.voice || {};
+      config.voice.tts = config.voice.tts || {};
+      config.voice.tts.engine = engine;
+      writeConfig(config);
+
+      // Actualiza tambien instancia en memoria para no requerir recarga.
+      tts.ttsOptions = {
+        ...(tts.ttsOptions || {}),
+        engine
+      };
+    }
+
+    function updateEngineHint(engine) {
+      if (engine === "browser") {
+        engineHint.textContent = "Recomendado para prueba rapida y reproduccion inmediata.";
+        return;
+      }
+
+      if (engine === "kokoro") {
+        engineHint.textContent = "Puede tardar en la primera carga por descarga/inicializacion del modelo.";
+        return;
+      }
+
+      if (engine === "mespeak-js") {
+        engineHint.textContent = "Fallback robusto en navegador: voz robotica, pero estable en cliente.";
+        return;
+      }
+
+      engineHint.textContent = "Perfil eSpeak usando Web Speech (separado de meSpeak y reproducido por el navegador).";
+    }
+
+    // Refleja estado interno del servicio en pantalla.
+    tts.onStatusChange(({ status, detail, engine }) => {
+      const txt = `Estado: ${status || "desconocido"}${engine ? ` | motor: ${engine}` : ""}${detail ? ` | ${detail}` : ""}`;
+      if (status === "error") {
+        setStatus(txt, "error");
+        appendLog(detail || "Error sin detalle", "ERROR", engine || getSelectedEngine());
+      } else if (status === "idle" || status === "playing") {
+        setStatus(txt, "ok");
+      } else {
+        setStatus(txt);
+      }
+
+      if (["loading", "generating", "playing", "ready"].includes(status)) {
+        appendLog(detail || status, "INFO", engine || getSelectedEngine());
+      }
+    });
+
+    window.addEventListener("error", (event) => {
+      appendLog(normalizeError(event.error || event.message), "ERROR", getActiveModelTag());
+    });
+
+    window.addEventListener("unhandledrejection", (event) => {
+      appendLog(normalizeError(event.reason), "ERROR", getActiveModelTag());
+    });
+
+    window.addEventListener("suri:tts-trace-step", (event) => {
+      const detail = event?.detail || {};
+      const step = detail?.step || "step";
+      const entry = detail?.entry || {};
+      if (!/error|failed|blocked/i.test(step)) return;
+      const stepError = entry?.error || "sin detalle";
+      appendLog(`trace=${step} | ${stepError}`, "TRACE", getActiveModelTag());
+    });
+
+    // Inicializa selector desde configuracion existente.
+    const initialConfig = readConfig();
+    const initialEngine =
+      initialConfig?.voice?.tts?.engine
+      || initialConfig?.tts?.engine
+      || "browser";
+
+    if (["browser", "mespeak-js", "kokoro", "espeak-wasm"].includes(initialEngine)) {
+      engineSelect.value = initialEngine;
+    }
+    updateEngineHint(getSelectedEngine());
+    updateModulationVisibility(getSelectedEngine());
+    fillControlsFromState();
+    loadKokoroVoiceOptions().catch((error) => {
+      appendLog(`No se pudieron cargar voces Kokoro: ${normalizeError(error)}`, "ERROR", "kokoro");
+    });
+    appendLog(`Motor inicial: ${getSelectedEngine()}`, "INFO", getSelectedEngine());
+
+    engineSelect.addEventListener("change", () => {
+      const engine = getSelectedEngine();
+      applyEngineToConfig(engine);
+      updateEngineHint(engine);
+      updateModulationVisibility(engine);
+      setStatus(`Motor seleccionado: ${engine}`);
+      appendLog("Motor cambiado manualmente", "INFO", engine);
+    });
+
+    btnApplyModulation.addEventListener("click", () => {
+      applyModulation();
+    });
+
+    btnReloadKokoroVoices.addEventListener("click", async () => {
+      appendLog("Recargando catalogo de voces Kokoro...", "INFO", "kokoro");
+      await loadKokoroVoiceOptions();
+      appendLog("Voces Kokoro actualizadas.", "OK", "kokoro");
+    });
+
+    playBtn.addEventListener("click", async () => {
+      const text = String(textInput.value || "").trim();
+      const engine = getSelectedEngine();
+
+      if (!text) {
+        setStatus("Ingresa un texto para reproducir.", "error");
+        appendLog("Intento de reproduccion sin texto", "ERROR", engine);
+        textInput.focus();
+        return;
+      }
+
+      applyEngineToConfig(engine);
+      applyModulation();
+      setStatus(`Iniciando reproduccion con ${engine}...`);
+
+      playBtn.disabled = true;
+      warmBtn.disabled = true;
+
+      try {
+        appendLog(`Play solicitado | length=${text.length}`, "INFO", engine);
+        await tts.speak(text, { force: true });
+
+        const finalState = tts.getStatus();
+        if (finalState?.status === "error") {
+          const finalMessage = finalState?.detail || "El motor reporto error al sintetizar";
+          setStatus(`Error: ${finalMessage}`, "error");
+          appendLog(`Play termino con error interno: ${finalMessage}`, "ERROR", engine);
+        } else {
+          setStatus("Reproduccion finalizada correctamente.", "ok");
+          appendLog("Reproduccion finalizada correctamente", "OK", engine);
+        }
+      } catch (error) {
+        const msg = normalizeError(error);
+        setStatus(`Error: ${msg}`, "error");
+        appendLog(`Fallo en play: ${msg}`, "ERROR", engine);
+      } finally {
+        playBtn.disabled = false;
+        warmBtn.disabled = false;
+      }
+    });
+
+    stopBtn.addEventListener("click", () => {
+      tts.stop();
+      setStatus("Reproduccion detenida por usuario.");
+      appendLog("Stop manual", "INFO", getSelectedEngine());
+    });
+
+    warmBtn.addEventListener("click", async () => {
+      const engine = getSelectedEngine();
+      applyEngineToConfig(engine);
+      applyModulation();
+      warmBtn.disabled = true;
+      playBtn.disabled = true;
+      setStatus(`Precargando ${engine}...`);
+
+      try {
+        await tts.preload();
+        setStatus(`Precarga completada para ${engine}.`, "ok");
+        appendLog("Precarga completada", "OK", engine);
+      } catch (error) {
+        const msg = normalizeError(error);
+        setStatus(`Fallo en precarga: ${msg}`, "error");
+        appendLog(`Fallo en precarga: ${msg}`, "ERROR", engine);
+      } finally {
+        warmBtn.disabled = false;
+        playBtn.disabled = false;
+      }
+    });
+
+    clearLogsBtn.addEventListener("click", () => {
+      errorLogs.value = "";
+      appendLog("Logs limpiados", "INFO", getSelectedEngine());
+    });
+  </script>
+</body>
+</html>
