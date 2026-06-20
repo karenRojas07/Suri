@@ -370,6 +370,17 @@ function normalizeBrowserVoiceName(value: unknown): string {
   return String(value || '').trim()
 }
 
+function buildBrowserVoiceKey(voice: SpeechSynthesisVoice): string {
+  return `${String(voice.voiceURI || '').trim()}||${String(voice.lang || '').trim()}||${String(voice.name || '').trim()}`
+}
+
+function isBrowserVoiceMatch(voice: SpeechSynthesisVoice, selectedValue: string): boolean {
+  const normalized = normalizeBrowserVoiceName(selectedValue)
+  if (!normalized) return false
+  if (buildBrowserVoiceKey(voice) === normalized) return true
+  return String(voice.name || '').trim() === normalized
+}
+
 function isSpanishBrowserVoice(voice: SpeechSynthesisVoice): boolean {
   const lang = String(voice?.lang || '').toLowerCase()
   return lang === 'es' || lang.startsWith('es-')
@@ -379,6 +390,45 @@ function isLikelyMaleBrowserVoice(voice: SpeechSynthesisVoice): boolean {
   const haystack = `${voice?.name || ''} ${voice?.voiceURI || ''}`.toLowerCase()
   const maleHints = ['raul', 'pablo', 'jorge', 'enrique', 'miguel', 'alejandro', 'carlos', 'david', 'male', 'man']
   return maleHints.some((hint) => haystack.includes(hint))
+}
+
+function normalizeVoiceEngine(value: unknown): 'browser' | 'espeak-wasm' | 'mespeak-js' | 'kokoro' {
+  const raw = String(value || '').trim().toLowerCase()
+  if (raw === 'browser' || raw === 'espeak-wasm' || raw === 'mespeak-js' || raw === 'kokoro') return raw
+  return 'browser'
+}
+
+function clampSpeechValue(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min
+  return Math.max(min, Math.min(max, value))
+}
+
+function engineSpeechProfile(engine: 'browser' | 'espeak-wasm' | 'mespeak-js' | 'kokoro', baseRate: number, basePitch: number): { rate: number; pitch: number } {
+  if (engine === 'espeak-wasm') {
+    return {
+      rate: clampSpeechValue(baseRate * 0.92, 0.5, 2),
+      pitch: clampSpeechValue(basePitch * 0.9, 0.5, 2),
+    }
+  }
+
+  if (engine === 'mespeak-js') {
+    return {
+      rate: clampSpeechValue(baseRate * 1.05, 0.5, 2),
+      pitch: clampSpeechValue(basePitch * 1.2, 0.5, 2),
+    }
+  }
+
+  if (engine === 'kokoro') {
+    return {
+      rate: clampSpeechValue(baseRate * 0.88, 0.5, 2),
+      pitch: clampSpeechValue(basePitch * 1.05, 0.5, 2),
+    }
+  }
+
+  return {
+    rate: clampSpeechValue(baseRate, 0.5, 2),
+    pitch: clampSpeechValue(basePitch, 0.5, 2),
+  }
 }
 
 function normalizeFaqRecord(input: Partial<FaqRecord>): FaqRecord {
@@ -685,7 +735,7 @@ function App() {
   const gestureOptions = ['rest', 'wave', 'point', 'explain', 'listen']
   const browserVoiceOptions = browserVoices.length > 0 ? browserVoices : []
 
-  const pickBrowserVoiceForProfile = (profile: 'primary' | 'secondary') => {
+  const pickBrowserVoiceForProfile = (profile: 'primary' | 'secondary', engine: 'browser' | 'espeak-wasm' | 'mespeak-js' | 'kokoro') => {
     const voices = browserVoices.length ? browserVoices : window.speechSynthesis.getVoices()
     if (!voices.length) return null
 
@@ -695,13 +745,26 @@ function App() {
     const otherProfileVoiceName = normalizeBrowserVoiceName(profile === 'primary' ? config.voice.secondary.browserVoice : config.voice.primary.browserVoice)
 
     const explicit = explicitVoiceName
-      ? voices.find((voice) => voice.name === explicitVoiceName)
+      ? voices.find((voice) => isBrowserVoiceMatch(voice, explicitVoiceName))
       : null
-    if (explicit) return explicit
+    if (explicit && engine === 'browser') return explicit
 
     const sameLang = voices.filter((voice) => String(voice.lang || '').toLowerCase() === String(preferredLang || '').toLowerCase())
     const spanishSameLang = sameLang.filter(isSpanishBrowserVoice)
-    const nonRepeated = sameLang.filter((voice) => voice.name !== otherProfileVoiceName)
+    const nonRepeated = sameLang.filter((voice) => !isBrowserVoiceMatch(voice, otherProfileVoiceName))
+
+    if (engine === 'espeak-wasm') {
+      return spanishSameLang.find(isLikelyMaleBrowserVoice) || spanishSameLang[0] || sameLang[0] || voices[0] || null
+    }
+
+    if (engine === 'mespeak-js') {
+      return spanishSameLang.find((voice) => !isLikelyMaleBrowserVoice(voice)) || spanishSameLang[0] || sameLang[0] || voices[0] || null
+    }
+
+    if (engine === 'kokoro') {
+      const spanish = voices.filter(isSpanishBrowserVoice)
+      return spanish.find((voice) => !isBrowserVoiceMatch(voice, otherProfileVoiceName)) || spanish[0] || voices[0] || null
+    }
 
     if (profile === 'primary') {
       const preferredMaleSpanish = spanishSameLang.find(isLikelyMaleBrowserVoice)
@@ -714,7 +777,7 @@ function App() {
       if (preferredFemaleSpanish) return preferredFemaleSpanish
 
       if (nonRepeated.length) return nonRepeated[0]
-      if (spanishSameLang.length) return spanishSameLang.find((voice) => voice.name !== otherProfileVoiceName) || spanishSameLang[0] || null
+      if (spanishSameLang.length) return spanishSameLang.find((voice) => !isBrowserVoiceMatch(voice, otherProfileVoiceName)) || spanishSameLang[0] || null
     }
 
     return voices.find((voice) => String(voice.lang || '').toLowerCase() === String(preferredLang || '').toLowerCase()) || voices[0] || null
@@ -740,25 +803,43 @@ function App() {
     return new Date(value).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
   }
 
-  const speakAssistantText = (text: string, repeatCount = 1, profile: 'primary' | 'secondary' = 'primary') => {
-    if (!canSpeak) return
+  const speakAssistantText = (text: string, repeatCount = 1, profile: 'primary' | 'secondary' = 'primary'): string | null => {
+    if (!canSpeak) return null
     const safeText = String(text || '').trim()
-    if (!safeText) return
+    if (!safeText) return null
 
     const profileConfig = profile === 'primary' ? config.voice.primary : config.voice.secondary
+    const selectedEngine = normalizeVoiceEngine(profileConfig.engine)
     const preferredLang = profileConfig.lang || config.speech.lang
     const preferredRate = profileConfig.rate ?? config.speech.rate
     const preferredPitch = profileConfig.pitch ?? config.speech.pitch
-    const preferred = pickBrowserVoiceForProfile(profile)
+    const adjusted = engineSpeechProfile(selectedEngine, preferredRate, preferredPitch)
+    const preferred = pickBrowserVoiceForProfile(profile, selectedEngine)
 
     window.speechSynthesis.cancel()
     for (let index = 0; index < Math.max(1, repeatCount); index += 1) {
       const utterance = new SpeechSynthesisUtterance(safeText)
       utterance.lang = preferredLang
-      utterance.rate = preferredRate
-      utterance.pitch = preferredPitch
+      utterance.rate = adjusted.rate
+      utterance.pitch = adjusted.pitch
       if (preferred) utterance.voice = preferred
       window.speechSynthesis.speak(utterance)
+    }
+
+    const voiceInfo = preferred ? `${preferred.name} (${preferred.lang})` : `Automatica (${preferredLang})`
+    return `${voiceInfo} | engine: ${selectedEngine}`
+  }
+
+  const testVoiceProfile = (profile: 'primary' | 'secondary') => {
+    const profileLabel = profile === 'primary' ? 'primaria' : 'secundaria'
+    const profileConfig = profile === 'primary' ? config.voice.primary : config.voice.secondary
+    const selectedEngine = normalizeVoiceEngine(profileConfig.engine)
+    const used = speakAssistantText(`Prueba de voz ${profileLabel}. Si me escuchas diferente, el cambio ya se aplico.`, 1, profile)
+    if (used) {
+      const note = selectedEngine === 'browser' ? '' : ' (renderizado con Web Speech)'
+      setStatus(`Voz ${profileLabel} activa: ${used}${note}`)
+    } else {
+      setStatus(`No se pudo probar voz ${profileLabel}`)
     }
   }
 
@@ -780,6 +861,10 @@ function App() {
     if (!messagesEndRef.current) return
     messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, sending])
+
+  useEffect(() => {
+    setConfigJson(JSON.stringify(config, null, 2))
+  }, [config])
 
   const startMicInput = () => {
     if (recognizing || sending || loading) return
@@ -1326,11 +1411,17 @@ function App() {
                 >
                   <option value="">Automatica</option>
                   {browserVoiceOptions.map((voice) => (
-                    <option key={voice.name} value={voice.name}>
+                    <option key={buildBrowserVoiceKey(voice)} value={buildBrowserVoiceKey(voice)}>
                       {voice.name} ({voice.lang})
                     </option>
                   ))}
                 </select>
+              </label>
+              <label>
+                Probar voz primaria
+                <button type="button" onClick={() => testVoiceProfile('primary')} disabled={!canSpeak}>
+                  Probar primaria
+                </button>
               </label>
               <label>
                 Voz primaria velocidad
@@ -1388,11 +1479,17 @@ function App() {
                 >
                   <option value="">Automatica</option>
                   {browserVoiceOptions.map((voice) => (
-                    <option key={voice.name} value={voice.name}>
+                    <option key={buildBrowserVoiceKey(voice)} value={buildBrowserVoiceKey(voice)}>
                       {voice.name} ({voice.lang})
                     </option>
                   ))}
                 </select>
+              </label>
+              <label>
+                Probar voz secundaria
+                <button type="button" onClick={() => testVoiceProfile('secondary')} disabled={!canSpeak}>
+                  Probar secundaria
+                </button>
               </label>
               <label>
                 Voz secundaria velocidad
@@ -1710,6 +1807,7 @@ function App() {
             <div className="actions">
               <button type="button" onClick={() => void applyConfigJson()}>Aplicar JSON</button>
             </div>
+            <p className="status">{status}</p>
           </section>
         )}
 

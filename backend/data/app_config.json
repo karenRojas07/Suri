@@ -16,6 +16,37 @@
     "rate": 1,
     "pitch": 1
   },
+  "voice": {
+    "lang": "es-ES",
+    "rate": 1.1,
+    "pitch": 1.2,
+    "primary": {
+      "lang": "es-ES",
+      "rate": 1.1,
+      "pitch": 1.2,
+      "engine": "mespeak-js",
+      "browserVoice": "Microsoft Raul - Spanish (Mexico)||es-MX||Microsoft Raul - Spanish (Mexico)"
+    },
+    "secondary": {
+      "lang": "es-MX",
+      "rate": 1,
+      "pitch": 1.1,
+      "engine": "kokoro",
+      "browserVoice": "Microsoft Sabina - Spanish (Mexico)||es-MX||Microsoft Sabina - Spanish (Mexico)"
+    },
+    "tts": {
+      "engine": "espeak-wasm",
+      "primaryEngine": "espeak-wasm",
+      "secondaryEngine": "browser"
+    }
+  },
+  "listening": {
+    "mode": "normal",
+    "model": "onnx-community/whisper-small",
+    "sensitivity": "medium",
+    "language": "spanish",
+    "task": "transcribe"
+  },
   "avatar": {
     "modelUrl": "/assets/avatar/SURI_Animations_2.glb",
     "scale": 0.65,
@@ -24,10 +55,7 @@
     "initialExpression": "happy",
     "initialGesture": "rest",
     "initialPlaybackRef": "",
-    "initialSequence": [],
-    "bubbleAnimationRules": [],
-    "animationKeywordMap": {},
-    "chatAnimationRefs": [],
+    "refreshPlaybackRef": "",
     "modelCatalog": [
       {
         "url": "./assets/avatar/SURI_Animations_2.glb",
@@ -59,7 +87,11 @@
         "short": "M",
         "defaultAnimation": "idle"
       }
-    ]
+    ],
+    "chatAnimationRefs": [],
+    "bubbleAnimationRules": [],
+    "animationKeywordMap": {},
+    "initialSequence": []
   },
   "ui": {
     "backgroundImageUrl": "/assets/fondo.png",
